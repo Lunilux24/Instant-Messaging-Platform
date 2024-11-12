@@ -131,21 +131,42 @@ public class IMClient {
 	{	// Login an existing user (no verification required - just set userId to input)
 		System.out.print("Enter user id: ");
 		userId = getLine();
-		System.out.println("User id is set to: "+userId);
+		System.out.println("User id is set to: " + userId);
 
 		// Set status to online
-		if(userId != null) 
+		if(userId != null)
 			status = onlineStatus;
 	}
 
 	private void addBuddy()
-	{	// Add buddy if have current user id
-		System.out.print("Enter buddy id: ");
-		String buddyId = getLine();
-		System.out.println("Adding buddy: "+buddyId);
+	{	// Ensure that user is logged in before adding buddy
+	    if (userId == null) {
+	        System.out.println("You need to login first.");
+	        return;
+	    }
 
-		
+		// Prompt for buddy id
+	    System.out.print("Enter buddy id: ");
+	    String buddyId = getLine();
+	    System.out.println("Adding buddy: " + buddyId);
 
+	    String request;
+	    String response;
+	    // Send add buddy message to server
+	    try {
+	        Socket clientSocket = new Socket(serverAddress, TCPServerPort);
+	        DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+	        BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+	        request = "ADD " + userId + " " + buddyId;
+	        outToServer.writeBytes(request + '\n');
+	        response = inFromServer.readLine();
+	        System.out.println("FROM SERVER: " + response);
+	        clientSocket.close();
+	    } catch (UnknownHostException e) {
+	        e.printStackTrace();
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private void deleteBuddy()
