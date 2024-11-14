@@ -171,6 +171,35 @@ public class IMClient {
 
 	private void deleteBuddy()
 	{	// Delete buddy if have current user id
+		System.out.print("Enter buddy id: ");
+		String buddyId = getLine();
+
+		if (buddyId == userId) {
+			System.out.println("You cannot delete yourself.");
+			return;
+	
+		}
+
+		System.out.println("Deleting buddy: " + buddyId);
+
+		String request;
+		String response;
+
+		// Send delete buddy message to server
+		try {
+			Socket clientSocket = new Socket(serverAddress, TCPServerPort);
+			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			request = "DEL " + userId + " " + buddyId;
+			outToServer.writeBytes(request + '\n');
+			response = inFromServer.readLine();
+			System.out.println("FROM SERVER: " + response);
+			clientSocket.close();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void buddyStatus()
