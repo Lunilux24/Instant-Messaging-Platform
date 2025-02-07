@@ -27,7 +27,7 @@ A UDP get buddy status request is responded to with a UDP message in return. Thi
 ### Messages and Ports
 Messages sent over TCP to the server are communicated on port 1234 and are acknowledged with a response message. Each message sent over TCP is done on a new connection (no persistent-connections). Messages sent over UDP are communicated on port 1235.  Both UDP and TCP is used when communicating between the client and the server.   
 
-Communciations between clients is done directly between the clients using TCP.  This connection will use the port `TCPMessagePort`.  The server will faciliate the sharing of port numbers, but will not be involved in client-to-client communications.  WHen you are developing locally with two clients, you will need to make sure to use different values for `TCPMessagePort`.
+Communciations between clients is done directly between the clients using TCP.  This connection will use the port `TCPMessagePort`.  The server will faciliate the sharing of port numbers, but will not be involved in client-to-client communications.  
 
 ### Response Messages
 Response messages are in ASCII text with a response code and a response message (similar to HTTP).
