@@ -18,7 +18,7 @@ class UDPClient {
 		 */
 		DatagramSocket clientSocket = new DatagramSocket();
 		/*
-		 * Get IP address for locatlhost
+		 * Get IP address for localhost
 		 */
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 
