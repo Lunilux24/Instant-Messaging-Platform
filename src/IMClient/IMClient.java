@@ -8,13 +8,15 @@ Text-based communication of commands.
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 public class IMClient {
 	// Protocol and system constants
 	public static String serverAddress = "localhost";
 	public static int TCPServerPort = 1234;					// connection to server
-	
+	public static int UDPPort = 1235;
+
 	/* 	
 	 * This value will need to be unique for each client you are running
 	 */
@@ -29,22 +31,23 @@ public class IMClient {
 	private String userId;
 	private String status;
 
-	public static void main(String []argv) throws Exception
-	{
+	private HashMap<String, BuddyStatusRecord> buddies;
+
+
+	public static void main(String []argv) throws Exception {
 		IMClient client = new IMClient();
 		client.execute();
 	}
 
-	public IMClient()
-	{
+	public IMClient() {
 		// Initialize variables
 		userId = null;
 		status = null;
+		buddies = new HashMap<>();
 	}
 
 
-	public void execute()
-	{
+	public void execute() {
 		initializeThreads();
 
 		String choice;
@@ -90,16 +93,14 @@ public class IMClient {
 		shutdown();
 	}
 
-	private void initializeThreads()
-	{
-
+	private void initializeThreads() {
+		
 	}
 
-	private void registerUser()
-	{	// Register user id
+	private void registerUser() {	// Register user id
 		System.out.print("Enter user id: ");
 		userId = getLine();
-		System.out.println("Registering user id: "+userId);
+		System.out.println("Registering user id: " + userId);
 		
 		String request;
 		String response;
@@ -111,9 +112,9 @@ public class IMClient {
 			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
 			request = "REG " + userId;
-			outToServer.writeBytes(request +'\n');
+			outToServer.writeBytes(request + '\n');
 			response = inFromServer.readLine();
-			System.out.println("FROM SERVER: "+ response);
+			System.out.println("FROM SERVER: " + response);
 			clientSocket.close();
 
 		} catch (UnknownHostException e) {
@@ -127,8 +128,7 @@ public class IMClient {
 		status = onlineStatus;
 	}
 
-	private void loginUser()
-	{	// Login an existing user (no verification required - just set userId to input)
+	private void loginUser() {	// Login an existing user (no verification required - just set userId to input)
 		System.out.print("Enter user id: ");
 		userId = getLine();
 		System.out.println("User id is set to: " + userId);
@@ -138,8 +138,7 @@ public class IMClient {
 			status = onlineStatus;
 	}
 
-	private void addBuddy()
-	{	// Ensure that user is logged in before adding buddy
+	private void addBuddy() {	// Ensure that user is logged in before adding buddy
 	    if (userId == null) {
 	        System.out.println("You need to login first.");
 	        return;
@@ -152,6 +151,7 @@ public class IMClient {
 
 	    String request;
 	    String response;
+		
 	    // Send add buddy message to server
 	    try {
 	        Socket clientSocket = new Socket(serverAddress, TCPServerPort);
@@ -169,8 +169,7 @@ public class IMClient {
 	    }
 	}
 
-	private void deleteBuddy()
-	{	// Delete buddy if have current user id
+	private void deleteBuddy() {	// Delete buddy if have current user id
 		System.out.print("Enter buddy id: ");
 		String buddyId = getLine();
 
@@ -202,8 +201,50 @@ public class IMClient {
 		}
 	}
 
-	private void buddyStatus()
-	{	// Print out buddy status (need to store state in instance variable that received from previous UDP message)
+	private void buddyStatus() {	
+		// Print out buddy status (need to store state in instance variable that received from previous UDP message)
+		if (!buddies.isEmpty()) {
+			buddies.clear();
+		}
+		String request;
+		String response;
+
+		try {
+			DatagramSocket socket = new DatagramSocket();
+			InetAddress addr = InetAddress.getByName(serverAddress);
+
+			request = "GET " + userId;
+			byte[] sendData = new byte[1024];
+			byte[] rcvData = new byte[1024];
+
+			sendData = request.getBytes();
+			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, addr, UDPPort);
+			socket.send(sendPacket);
+
+			DatagramPacket receivePacket = new DatagramPacket(rcvData, rcvData.length);
+			socket.receive(receivePacket);
+
+			response = new String(receivePacket.getData());
+			String line;
+			String[] arr = response.split("\n");
+			for (int i = 0; i < arr.length - 1; i++) {
+				line = arr[i].strip();
+				String[] values = line.split(" ");
+				BuddyStatusRecord buddy = new BuddyStatusRecord();
+				buddy.buddyId = values[0];
+				buddy.status = values[1] + " " + values[2];
+				buddy.IPaddress = values[3];
+				buddy.buddyPort = values[4];
+				buddies.put(values[0], buddy);
+			}
+			System.out.println(response);
+
+			socket.close();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void buddyMessage()
@@ -212,7 +253,9 @@ public class IMClient {
 	}
 
 	private void shutdown()
-	{	// Close down client and all threads
+	{	
+		System.out.println("System shutting down...");
+		System.exit(0);
 	}
 
 	private void acceptConnection()
